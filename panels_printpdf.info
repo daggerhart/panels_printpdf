@@ -1,0 +1,7 @@
+name = Panels PrintPDF Renderer
+description = Display rendered to output panel as a PDF file
+version = 7.x-0.1
+core = 7.x
+package = Panels
+dependencies[] = panels
+dependencies[] = print_pdf
