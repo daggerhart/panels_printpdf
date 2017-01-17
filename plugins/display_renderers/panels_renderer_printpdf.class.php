@@ -9,6 +9,21 @@
  * using the print_pdf module and settings.
  */
 class panels_renderer_printpdf extends panels_renderer_standard {
+
+  public $options = array();
+
+  /**
+   * Load our saved options from the page_manager handler $conf array
+   *
+   * @param $default_options
+   */
+  function set_options( $default_options ){
+    $handlers = ctools_export_load_object('page_manager_handlers', 'names', array( $this->display->storage_id ) );
+    $handler = reset( $handlers );
+
+    $this->options = array_replace( $default_options, $handler->conf );
+  }
+
   /**
    * Render the layout according to panels_renderer_standard, then process
    * the content the same way print_pdf module works, and deliver PDF to the
@@ -19,11 +34,22 @@ class panels_renderer_printpdf extends panels_renderer_standard {
   function render_layout() {
     $content = parent::render_layout();
 
-    $pdf_filename = 'whatwhat.pdf';
+    $pdf_filename = $this->options['pdf_filename'];
+
+    // filename context substitutions and transliteration
+    if ( !empty( $this->display->context ) ){
+      $pdf_filename = ctools_context_keyword_substitute( $pdf_filename, array(), $this->display->context );
+      $pdf_filename = filter_xss_admin( $pdf_filename );
+    }
+
+    if ( function_exists('transliteration_clean_filename') ) {
+      $pdf_filename = transliteration_clean_filename( $pdf_filename, language_default('language') );
+    }
+
     $pdf = $this->generate_pdf( $content );
 
     if ($pdf == NULL) {
-      drupal_set_message("Error generating PDF on {$_GET['q']}");
+      drupal_set_message( t("Error generating PDF on @uri", array( '@uri' => $_GET['q'] ) ) );
       drupal_goto();
       exit;
     }
@@ -43,9 +69,6 @@ class panels_renderer_printpdf extends panels_renderer_standard {
   function generate_pdf( $content ) {
     global $base_url;
     module_load_include('inc', 'print', 'print.pages' );
-
-    $paper_size = variable_get('print_pdf_paper_size', 'A4');
-    $page_orientation = variable_get('print_pdf_page_orientation', 'portrait');
 
     // Call the current tool's hook_pdf_tool_info(), to see if we need to expand CSS
     $pdf_tool = explode('|', variable_get('print_pdf_pdf_tool', PRINT_PDF_PDF_TOOL_DEFAULT));
@@ -89,7 +112,7 @@ class panels_renderer_printpdf extends panels_renderer_standard {
       'url' => url($node->path, array('absolute' => TRUE)),
     );
 
-    $pdf = print_pdf_generate_html($html, $meta, NULL, $paper_size, $page_orientation);
+    $pdf = print_pdf_generate_html($html, $meta, NULL, $this->options['pdf_paper_size'], $this->options['pdf_page_orientation']);
 
     return !empty($pdf) ? $pdf : NULL;
   }

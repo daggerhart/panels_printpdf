@@ -6,7 +6,7 @@ Requires the completed install of the print_pdf module that comes with [print](h
 
 ### Screenshots
 
-![Panel with Print PDF renderer selected](http://public.daggerhart.com/images/panels-printpdf-1.png "Print PDF renderer")
+![Panel with Print PDF renderer selected](http://public.daggerhart.com/images/panels-printpdf-2.png "Print PDF renderer")
 
 
 ### Example Panel Export

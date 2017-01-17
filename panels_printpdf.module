@@ -49,11 +49,68 @@ function panels_printpdf_default_panels_renderer_pipeline() {
       0 => array(
         'access' => array(),
         'renderer' => 'printpdf',
-        'options' => array(),
+        // default values for renderer options
+        'options' => array(
+          'pdf_paper_size' => NULL,
+          'pdf_page_orientation' => NULL,
+          'pdf_filename' => 'filename.pdf',
+        ),
       ),
     ),
   );
   $pipelines[$pipeline->name] = $pipeline;
 
   return $pipelines;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function panels_printpdf_form_panels_panel_context_edit_settings_alter(&$form, &$form_state, $form_id) {
+  // get default values from handler's stored conf array
+  $conf = $form_state['handler']->conf;
+
+  $paper_size = !empty( $conf['pdf_paper_size'] ) ? $conf['pdf_paper_size'] : variable_get('print_pdf_paper_size', PRINT_PDF_PAPER_SIZE_DEFAULT);
+  $page_orientation = !empty( $conf['pdf_page_orientation'] ) ? $conf['pdf_page_orientation'] : variable_get('print_pdf_page_orientation', PRINT_PDF_PAGE_ORIENTATION_DEFAULT);
+  $filename = !empty( $conf['pdf_filename'] ) ? $conf['pdf_filename'] : 'filename.pdf';
+
+  $form['conf']['pipeline']['pdf_paper_size'] = array(
+    '#type' => 'select',
+    '#title' => t('PDF Paper size'),
+    '#description' => t('Choose the paper size of the generated PDF.'),
+    '#weight' => 100,
+    '#options' => _print_pdf_paper_sizes(),
+    '#default_value' => $paper_size,
+  );
+
+  $form['conf']['pipeline']['pdf_page_orientation'] = array(
+    '#type' => 'select',
+    '#title' => t('PDF Page orientation'),
+    '#description' => t('Choose the page orientation of the generated PDF.'),
+    '#weight' => 100,
+    '#options' => array('portrait' => t('Portrait'), 'landscape' => t('Landscape')),
+    '#default_value' => $page_orientation,
+  );
+
+  $form['conf']['pipeline']['pdf_filename'] = array(
+    '#type' => 'textfield',
+    '#title' => t('PDF Filename'),
+    '#description' => t('Name of the file this PDF will generate. Accepts context substitutions.'),
+    '#weight' => 100,
+    '#default_value' => $filename,
+  );
+
+  $form['#submit'][] = 'panels_printpdf_form_panels_panel_context_edit_settings_submit';
+}
+
+/**
+ * Implements form submit callback
+ *
+ * @param $form
+ * @param $form_state
+ */
+function panels_printpdf_form_panels_panel_context_edit_settings_submit(&$form, &$form_state) {
+  $form_state['handler']->conf['pdf_paper_size'] = $form_state['values']['pdf_paper_size'];
+  $form_state['handler']->conf['pdf_page_orientation'] = $form_state['values']['pdf_page_orientation'];
+  $form_state['handler']->conf['pdf_filename'] = $form_state['values']['pdf_filename'];
 }
